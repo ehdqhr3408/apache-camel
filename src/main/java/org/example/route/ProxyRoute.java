@@ -1,8 +1,7 @@
 package org.example.route;
 
-import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPath;
-import org.apache.camel.component.jackson.JacksonDataFormat;
+import org.apache.camel.model.dataformat.XStreamDataFormat;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.apache.camel.Exchange;
@@ -24,9 +23,6 @@ public class ProxyRoute extends RouteBuilder {
         return ssn.replaceAll(last_6_char_pattern, "******");
     }
 
-    String str = null;
-
-
     final
     private Inspector inspector;
 
@@ -46,36 +42,23 @@ public class ProxyRoute extends RouteBuilder {
 ////        .setBody(constant("https-body-test"))
 //        .to("direct:proxy");
 
-        from("jetty:http://0.0.0.0:9090?matchOnUriPrefix=true")
+        from("jetty:https://0.0.0.0:9090?matchOnUriPrefix=true")
                 .routeId("httpProxyRoute")
-                .setHeader(Exchange.HTTP_SCHEME, constant("http"))
-                .setHeader(Exchange.HTTP_HOST, constant("0.0.0.0"))
-                .setHeader(Exchange.HTTP_PATH, constant("/"))
-                .setHeader(Exchange.HTTP_PORT,constant("9090"))
-
-                .setBody(constant("http-body-test"))
+//                .setHeader(Exchange.HTTP_SCHEME, constant("http"))
+//                .setHeader(Exchange.HTTP_PORT,constant("9090"))
+//                .setBody(constant("http-body-test"))
                 .process(new Processor() {
                     @Override
                     //processor 에서 변경 가능
                     public void process(Exchange exchange) throws Exception {
 
-                        JSONParser jsonParser = new JSONParser();
                         String temp = exchange.getIn().getBody(String.class);
-                      //  Object jsonObj = JsonPath.parse(temp).read("$[?(@.ssn)]");
-
-                        JSONObject jsonObj = (JSONObject) jsonParser.parse(temp);
-                        if (jsonObj.containsKey("ssn")) {
-                            str = maskSSN(jsonObj.get("ssn").toString());
-                        }
-                       jsonObj.replace("ssn", jsonObj.get("ssn"), str);
+                        Object jsonObj = JsonPath.parse(temp).read("$..ssn");
                         exchange.getOut().setBody(jsonObj);
                     }
                 })
-//
-//                .setProperty("ssn").jsonpath("$.ssn")
-//                .log("ssn: ${property.ssn}")
-                .to("http://localhost:8080/camel/greetings/Jacopo");
-                //.toD("http://fuse-demo-app-n-fuse.apps.cluster-e27c.e27c.sandbox1520.opentlc.com/camel/greetings/Jacopo");
+                .to("direct:proxy");
+        //.toD("http://fuse-demo-app-n-fuse.apps.cluster-e27c.e27c.sandbox1520.opentlc.com/camel/greetings/Jacopo");
         from("direct:proxy")
                 .log(">>>>>>> ${date:now}")
                 //.to("log:info?showHeaders=true")
@@ -88,8 +71,8 @@ public class ProxyRoute extends RouteBuilder {
 
                 .log("${headers.CamelHttpScheme}://${headers.Host}/${headers.CamelHttpPath}?bridgeEndpoint=true")
                 .log("${body}")
-             //   .toD("jetty:${headers.CamelHttpScheme}://${headers.Host}/${headers.CamelHttpPath}?bridgeEndpoint=true")
-                .log("proxy response : \n${body}");
+                // .toD("jetty:${headers.CamelHttpScheme}://${headers.Host}/${headers.CamelHttpPath}?bridgeEndpoint=true")
+                .log("response : \n${body}");
 
     }
 }
