@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+  <bean id="http" class="org.apache.camel.component.http4.HttpComponent">
+    <property name="connectTimeout" value="3000" />
+    <property name="connectionRequestTimeout" value="60000" />
+  </bean>
+  
+  <bean id="https" parent="http">
+    <property name="x509HostnameVerifier" ref="noopHostnameVerifier" />
+    <property name="sslContextParameters" ref="sslContextParameters"/>
+  </bean>
+  <bean id="sslContextParameters" class="org.apache.camel.util.jsse.SSLContextParameters">
+    <property name="keyManagers" ref="keyManagersParameters"/>
+    <property name="trustManagers" ref="trustManagersParameters"/>
+  </bean>
+  <bean id="keyManagersParameters" class="org.apache.camel.util.jsse.KeyManagersParameters">
+    <property name="keyStore" ref="keyStoreParameters" />
+  </bean>
+  <bean id="keyStoreParameters" class="org.apache.camel.util.jsse.KeyStoreParameters">
+    <property name="resource" value="${ssl.key-store}" />
+  </bean>
+
+  <bean id="trustManagersParameters" class="org.apache.camel.util.jsse.TrustManagersParameters">
+    <property name="trustManager" ref="dummyTrustManager" />
+  </bean>
+  <bean id="dummyTrustManager" class="org.apache.camel.component.mail.DummyTrustManager"/>
+  <bean id="noopHostnameVerifier" class="org.apache.http.conn.ssl.NoopHostnameVerifier" />
+  
+</beans>

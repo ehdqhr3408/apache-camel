@@ -1,0 +1,1 @@
+= Red Hat Fuse 3scale Camel Service Plugin Demo
